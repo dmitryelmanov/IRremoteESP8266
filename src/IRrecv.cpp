@@ -30,12 +30,19 @@ static ETSTimer timer;
 #endif
 volatile irparams_t irparams;
 irparams_t *irparams_save;  // A copy of the interrupt state while decoding.
+static IrReceivedCallback irReceivedCb = nullptr;
 
 #ifndef UNIT_TEST
 static void ICACHE_RAM_ATTR read_timeout(void *arg __attribute__((unused))) {
   os_intr_lock();
   if (irparams.rawlen)
+  {
     irparams.rcvstate = STATE_STOP;
+    if (irReceivedCb != nullptr)
+    {
+        irReceivedCb();
+    }
+  }
   os_intr_unlock();
 }
 
@@ -58,6 +65,10 @@ static void ICACHE_RAM_ATTR gpio_intr() {
   if (rawlen >= irparams.bufsize) {
     irparams.overflow = true;
     irparams.rcvstate = STATE_STOP;
+    if (irReceivedCb != nullptr)
+    {
+        irReceivedCb();
+    }
   }
 
   if (irparams.rcvstate == STATE_STOP)
@@ -627,6 +638,15 @@ bool IRrecv::matchSpace(uint32_t measured, uint32_t desired,
   DPRINT(excess);
   DPRINT(". ");
   return match(measured, desired - excess, tolerance);
+}
+
+///
+/// \brief Set callback that will be called right after IR code will be received.
+/// \param callback
+///
+void IRrecv::setReadyToDecodeCallback(IrReceivedCallback callback)
+{
+    irReceivedCb = callback;
 }
 
 /* -----------------------------------------------------------------------
