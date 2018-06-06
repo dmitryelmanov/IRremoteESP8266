@@ -14,6 +14,9 @@
 #include <stdint.h>
 #include "IRremoteESP8266.h"
 
+
+using IrReceivedCallback = void ICACHE_RAM_ATTR (*)(void);
+
 // Constants
 #define HEADER         2U  // Usual nr. of header entries.
 #define FOOTER         2U  // Usual nr. of footer (stop bits) entries.
@@ -121,6 +124,7 @@ class IRrecv {
   static bool matchSpace(uint32_t measured, uint32_t desired,
                          uint8_t tolerance = TOLERANCE,
                          int16_t excess = MARK_EXCESS);
+  void setReadyToDecodeCallback(IrReceivedCallback callback);
 #ifndef UNIT_TEST
 
  private:
